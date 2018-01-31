@@ -26,13 +26,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="CoB.Install-SoftwareManifestGUI.xaml" />
+    <Content Include="MainWindow.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CoB.Install-SoftwareManifestGUI.ps1" />
-    <Compile Include="CoB.Install-SoftwareManifestGUI.xaml.ps1">
+    <Compile Include="MainWindow.xaml.ps1">
       <SubType>Code</SubType>
-      <DependentUpon>CoB.Install-SoftwareManifestGUI.xaml</DependentUpon>
+      <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
