@@ -25,9 +25,24 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="CoB.Install-SoftwareManifestGUI.xaml" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="CoB.Install-SoftwareManifestGUI.ps1" />
+    <Compile Include="CoB.Install-SoftwareManifestGUI.xaml.ps1">
+      <SubType>Code</SubType>
+      <DependentUpon>CoB.Install-SoftwareManifestGUI.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <Name>PresentationFramework</Name>
+      <AssemblyName>
+      </AssemblyName>
+      <HintPath>
+      </HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />
