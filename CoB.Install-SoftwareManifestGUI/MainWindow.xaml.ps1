@@ -1,4 +1,5 @@
-﻿Import-Module CoB.SoftwareManagement
+﻿Remove-Module CoB.SoftwareManagement
+Import-Module CoB.SoftwareManagement
 
 [xml]$xaml = Get-Content -Path "$PSScriptRoot\MainWindow.xaml"
 $xamlReader = New-Object System.Xml.XmlNodeReader $xaml
@@ -8,13 +9,26 @@ $xaml.SelectNodes("//*[@*[contains(translate(name(.),'n','N'),'Name')]]")  | For
     New-Variable -Name $_.Name -Value $window.FindName($_.Name) -Force
 }
 
-function Set-DataGridContents
+function Convert-ArrayToSystemArray()
 {
+	param(
+		[object[]]$InputObjects
+	)
 
+	$array = New-Object System.Collections.ArrayList
+	$Script:procInfo = $InputObjects
+	$array.AddRange($procInfo)
+	return $array
 }
-$array = New-Object System.Collections.ArrayList
-$Script:procInfo = CoB.SoftwareManagement\Get-CoBPak | Select Company,Name,Version,Architecture | sort -Property Company
-$array.AddRange($procInfo)
-$listCatalog.ItemsSource = $array
+
+$InstallQueue = New-Object System.Collections.ArrayList
+$InstallCatalog = Convert-ArrayToSystemArray -InputObjects (CoB.SoftwareManagement\Get-CoBPak | Select Company,Name,Version,Architecture | sort -Property Company)
+
+$listQueue.ItemsSource = $InstallQueue
+$listCatalog.ItemsSource = $InstallCatalog
+
 
 $window.ShowDialog()
+
+$InstallQueue.Add($InstallCatalog[0])
+$listQueue.
