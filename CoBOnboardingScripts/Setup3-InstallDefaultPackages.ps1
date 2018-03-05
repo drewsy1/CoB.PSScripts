@@ -1,26 +1,47 @@
 ﻿$VerbosePreference = 2
 
-$DefaultPackages = @(
-    @{"Name"="Mozilla Firefox*"; "ChocoPackage"="firefox"; "UninstallArgs"="/s"},
-    @{"Name"="Google Chrome*"; "ChocoPackage"="googlechrome"; "UninstallArgs"=""},
-    @{"Name"="7-Zip*"; "ChocoPackage"="7zip"; "UninstallArgs"="/s"}
+# Establishes a list of default packages for all computers during onboarding.
+$DetectedPackges = (
+    @(
+        @{ "Name" = "7-Zip*"; "ChocoPackage" = "7zip"; "UninstallArgs" = "/s"; "ChocoPackage64" = ""; "Force" = $true },
+        @{ "Name" = "Google Chrome*"; "ChocoPackage" = "googlechrome"; "ChocoPackage64" = ""; "Force" = $true },
+        @{ "Name" = "Microsoft Office Professional Plus 2013*"; "ChocoPackage" = "microsoft-office-professional-plus-2013"; "ChocoPackage64" = ""; "Force" = $false },
+        @{ "Name" = "Microsoft Office Professional Plus 2016*"; "ChocoPackage" = "microsoft-office-professional-plus-2016 --x86"; "ChocoPackage64" = "microsoft-office-professional-plus-2016"; "Force" = $true },
+        @{ "Name" = "Mozilla Firefox*"; "ChocoPackage" = "firefox"; "ChocoPackage64" = ""; "Force" = $true }
+    ) | ForEach-Object {New-Object -TypeName PSCustomObject -Property $_ }
 )
 
-$DefaultPackages | ForEach-Object{
+# Detects existing non-Chocolatey installations of $DetectedPackges, removes them, and replaces them with their Chocolatey counterparts.
+$DetectedPackges | ForEach-Object { 
     $CurrentPackage = $_
-    $InstalledPackages = (Get-Package $currentPackage.Name -ErrorAction SilentlyContinue)
-    if($InstalledPackages.Count -gt 0){
-        #if((($InstalledPackages.Version -replace '(^\d+\D)|\D*(\d+)\D*', '$1$2') -as [decimal]) -lt (((Find-Package -ProviderName Chocolatey -Name $CurrentPackage.ChocoPackage).Version -replace '(^\d+\D)|\D*(\d+)\D*', '$1$2'))){
-            if($InstalledPackages.ProviderName.Contains("msi")){
-                $InstalledPackages | Where-Object -Property "ProviderName" -Match "msi" | Uninstall-Package
+    $InstalledPackages = (Get-Package -Name $CurrentPackage.Name -ErrorAction SilentlyContinue)
+    $ChocoPackageToBeInstalled = $CurrentPackage.ChocoPackage
+
+    if ($InstalledPackages -gt 0)
+    { 
+        $InstalledPackages | ForEach-Object { 
+            $InstalledPackage = $_
+            $AvailablePackages = (Find-Package -Name $CurrentPackage.Name -ProviderName Chocolatey -Source CoBIT_Chocolatey -AllVersions)
+            
+            $VersionToBeInstalled = ""
+
+            if (($InstalledPackage.Source -match 'C:\\Program Files \(x86\)') -and ($CurrentPackage.ChocoPackage64 -ne "")) {  $ChocoPackageToBeInstalled = $CurrentPackage.ChocoPackage64 }
+            $AvailablePackages | ForEach-Object { 
+                if ($InstalledPackage.Version -match ($_.Version -replace '^(\d+.\d+).*', '$1')) {  $VersionToBeInstalled = $_.Version }
             }
-            elseif($CurrentPackage.UninstallArgs -ne ""){
-                $InstalledPackages | Where-Object -Property "ProviderName" -Match "Programs" | ForEach-Object{ Start-Process -FilePath ((([xml]($_.SwidTagText)).SoftwareIdentity.Meta.UninstallString -replace '^"(.*)"$','$1')) -ArgumentList $CurrentPackage.UninstallArgs -Wait -NoNewWindow }
+            
+
+            if ($VersionToBeInstalled -ne "")
+            {  
+                & "choco install $ChocoPackageToBeInstalled --version=$VersionToBeInstalled -n"
+                & "choco upgrade $ChocoPackageToBeInstalled"
             }
-            else{
-                $InstalledPackages | Where-Object -Property "ProviderName" -Match "Programs" | ForEach-Object{ Start-Process -FilePath ((([xml]($_.SwidTagText)).SoftwareIdentity.Meta.UninstallString -replace '^"(.*)"$','$1')) -Wait -NoNewWindow }
+            else
+            { 
+                & ([xml]($InstalledPackage.SwidTagText)).SoftwareIdentity.Meta.UninstallString
+                & "choco install $ChocoPackageToBeInstalled"
             }
-        #}
+        }
     }
-    choco install $CurrentPackage.ChocoPackage -force
+    elseif ($CurrentPackage.Force) { & "choco install $ChocoPackageToBeInstalled" }
 }
